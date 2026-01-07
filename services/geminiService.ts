@@ -1,8 +1,6 @@
 
 import { GoogleGenAI } from "@google/genai";
-import { GuessRecord } from "../types";
-
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || "" });
+import { GuessRecord } from "../types.ts";
 
 export const getAICommentary = async (
   target: string,
@@ -11,6 +9,13 @@ export const getAICommentary = async (
   strikes: number,
   balls: number
 ): Promise<string> => {
+  const apiKey = process.env.API_KEY;
+  if (!apiKey || apiKey === 'YOUR_API_KEY') {
+    return "API Key가 설정되어 있지 않습니다.";
+  }
+
+  const ai = new GoogleGenAI({ apiKey });
+
   try {
     const historyText = history
       .map(h => `Guess: ${h.guess}, Results: ${h.strikes}S ${h.balls}B`)
@@ -26,16 +31,14 @@ export const getAICommentary = async (
       User's Newest Guess: "${currentGuess}"
       Results for this guess: ${strikes} Strike(s), ${balls} Ball(s).
       
-      Rules of the game:
-      - Strike: Digit is correct and in the right position.
-      - Ball: Digit is correct but in the wrong position.
-      - 4 Strikes means the user wins.
+      Rules:
+      - Strike: Correct digit and position.
+      - Ball: Correct digit, wrong position.
       
-      Provide a short, punchy reaction to this specific guess. 
-      - If it was a good guess (lots of strikes/balls), be impressed but competitive.
-      - If it was a terrible guess, be snarky or offer a tiny cryptic hint.
-      - If the user won (4 strikes), congratulate them with a bit of "I'll get you next time" energy.
-      - KEEP IT UNDER 2 SENTENCES.
+      Provide a short, punchy reaction (under 2 sentences).
+      - If good guess, be slightly threatened.
+      - If poor guess, be witty or snarky.
+      - If won (4 strikes), be impressed but ready for revenge.
     `;
 
     const response = await ai.models.generateContent({
@@ -47,9 +50,9 @@ export const getAICommentary = async (
       }
     });
 
-    return response.text || "Interesting choice. Let's see where this goes.";
+    return response.text || "Interesting strategy.";
   } catch (error) {
     console.error("Gemini Error:", error);
-    return "The numbers don't lie, but I'm speechless right now.";
+    return "The system encountered an anomaly in analysis.";
   }
 };
